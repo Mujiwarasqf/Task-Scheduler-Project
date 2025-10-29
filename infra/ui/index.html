@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Task Scheduler</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin-bottom: 8px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
+    input, button { padding: 10px; font-size: 14px; }
+    input { width: 100%; max-width: 320px; margin-right: 8px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .task { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px dotted #eee; }
+    small { color:#666; }
+  </style>
+</head>
+<body>
+  <h1>Daily Task Scheduler</h1>
+  <p><small>Serverless on AWS (API Gateway + Lambda + DynamoDB). Hosted via S3 + CloudFront.</small></p>
+  <div class="card">
+    <div class="row">
+      <div id="current-time" style="font-size: 18px; font-weight: bold;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Add Task</h3>
+    <div class="row">
+      <input id="title" placeholder="Task title" />
+      <input id="due" type="date" />
+      <input id="time" type="time" />
+      <button onclick="addTask()">Add</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Tasks</h3>
+    <div class="row">
+      <input id="user" placeholder="User ID" value="demo" />
+      <button onclick="loadTasks()">Refresh</button>
+    </div>
+    <div id="tasks"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
