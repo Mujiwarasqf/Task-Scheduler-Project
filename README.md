@@ -158,39 +158,77 @@ aws cloudfront create-invalidation --distribution-id <dist-id> --paths "/*"
 
 To set up GitHub Actions with AWS OIDC:
 
-1. **Create IAM OIDC Provider**:
-   ```bash
-   aws iam create-open-id-connect-provider \
-     --url https://token.actions.githubusercontent.com \
-     --client-id-list sts.amazonaws.com \
-     --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
-   ```
+### Step 1: Get Your AWS Account ID
+```bash
+aws sts get-caller-identity --query Account --output text
+```
 
-2. **Create IAM Role** with trust policy for GitHub:
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Effect": "Allow",
-         "Principal": {
-           "Federated": "arn:aws:iam::YOUR_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
-         },
-         "Action": "sts:AssumeRole",
-         "Condition": {
-           "StringEquals": {
-             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-           },
-           "StringLike": {
-             "token.actions.githubusercontent.com:sub": "repo:Mujiwarasqf/Task-Scheduler-Project:*"
-           }
-         }
-       }
-     ]
-   }
-   ```
+### Step 2: Create IAM OIDC Provider
+```bash
+aws iam create-open-id-connect-provider \
+  --url https://token.actions.githubusercontent.com \
+  --client-id-list sts.amazonaws.com \
+  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+```
 
-3. **Add role ARN to GitHub secrets** as `AWS_ROLE_TO_ASSUME`
+### Step 3: Create Trust Policy File
+```bash
+cat > trust-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:Mujiwarasqf/Task-Scheduler-Project:*"
+        }
+      }
+    }
+  ]
+}
+EOF
+```
+
+### Step 4: Create IAM Role
+```bash
+aws iam create-role \
+  --role-name GitHubActionsRole \
+  --assume-role-policy-document file://trust-policy.json
+```
+
+### Step 5: Attach Permissions Policy
+```bash
+# For demo purposes (use least privilege in production)
+aws iam attach-role-policy \
+  --role-name GitHubActionsRole \
+  --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+```
+
+### Step 6: Get Role ARN
+```bash
+aws iam get-role --role-name GitHubActionsRole --query 'Role.Arn' --output text
+```
+
+### Step 7: Add to GitHub Secrets
+1. Go to your GitHub repository
+2. Settings → Secrets and variables → Actions
+3. Click "New repository secret"
+4. Add these secrets:
+   - **Name**: `AWS_ROLE_TO_ASSUME`
+   - **Value**: The ARN from Step 6 (e.g., `arn:aws:iam::123456789012:role/GitHubActionsRole`)
+   - **Name**: `AWS_REGION` (optional)
+   - **Value**: `eu-west-2`
+
+### Step 8: Test the Setup
+Push to main branch and check if GitHub Actions can assume the role successfully.
 
 ## 📄 License
 
